@@ -88,3 +88,33 @@ soundButton.addEventListener('click',async()=>{
     soundButton.innerHTML='<span class="sound-icon">♫</span> INTENTAR DE NUEVO';
   }finally{soundButton.disabled=false;}
 });
+
+// Secuencia interactiva de lanzamiento visual (sin efectos peligrosos ni descargas externas).
+const launchDemo=document.getElementById('launchDemo');
+const rocketStage=document.getElementById('rocketStage');
+const rocketState=document.getElementById('rocketState');
+const rocketAltitude=document.getElementById('rocketAltitude');
+const rocketSequence=document.getElementById('rocketSequence');
+let launchTimer=null;
+launchDemo?.addEventListener('click',()=>{
+  if(launchTimer) clearInterval(launchTimer);
+  rocketStage.classList.remove('launching');
+  void rocketStage.offsetWidth;
+  rocketStage.classList.add('launching');
+  launchDemo.disabled=true;
+  launchDemo.innerHTML='SECUENCIA EN CURSO <span>↗</span>';
+  rocketState.textContent='ASCENSO SIMULADO';
+  let elapsed=0;
+  launchTimer=setInterval(()=>{
+    elapsed++;
+    rocketSequence.textContent=`00:${String(elapsed).padStart(2,'0')}`;
+    rocketAltitude.textContent=`${Math.min(120,elapsed*12).toString().padStart(3,'0')} KM`;
+    if(elapsed>=6){
+      clearInterval(launchTimer);launchTimer=null;
+      rocketState.textContent='SECUENCIA COMPLETADA';
+      rocketAltitude.textContent='120 KM';
+      launchDemo.disabled=false;
+      launchDemo.innerHTML='REPETIR SECUENCIA <span>↻</span>';
+    }
+  },1000);
+});

@@ -1,20 +1,23 @@
 # APOLO5 — Rocket Tec Sinaloa 2026
 
-Landing page estática lista para GitHub Pages.
-
-## Publicar en GitHub Pages
-1. Descomprime el ZIP.
-2. Sube el contenido de esta carpeta al repositorio (el archivo `index.html` debe quedar en la raíz).
-3. En GitHub abre **Settings → Pages**.
-4. En **Build and deployment**, selecciona **Deploy from a branch**.
-5. Elige la rama `main` y la carpeta `/ (root)`, guarda y espera la publicación.
+Landing page estática para publicar directamente en GitHub Pages.
 
 ## Contenido
-- Identidad del equipo: APOLO5, equipo 05, grupo 504.
-- Logotipos Rocket Tec Sinaloa 2026 y APOLO5.
-- Diseño oscuro, adaptable a móviles y escritorio.
-- Recorrido narrativo: Troposfera, Estratosfera, Termosfera y Espacio exterior.
-- Cuenta regresiva hasta el 2 de diciembre de 2026 a las 07:00 (UTC−7, Culiacán).
-- Ambiente sonoro de misión sintetizado con Web Audio API, con activación y apagado mediante botón.
+- `index.html`: estructura y contenido del sitio.
+- `styles.css`: diseño adaptable a escritorio y móvil, animaciones y estilos.
+- `script.js`: menú móvil, barra de progreso, cuenta regresiva, simulación visual interactiva y ambiente de misión opcional.
+- `assets/`: logotipos e imágenes del proyecto.
 
-La cuenta regresiva utiliza la hora objetivo con desplazamiento fijo `UTC−07:00`; no requiere servicios externos. Las tipografías de Google Fonts requieren conexión a internet, con tipografías de respaldo incluidas.
+## Publicación en GitHub Pages
+1. Descomprime el ZIP.
+2. Sube el contenido de esta carpeta a la raíz del repositorio (no la carpeta contenedora).
+3. Conserva la configuración actual de GitHub Pages y espera a que termine el despliegue.
+
+## Cuenta regresiva
+Configurada para el miércoles 2 de diciembre de 2026 a las 7:00 a. m. en Culiacán, Sinaloa (UTC−7).
+
+## Audio
+El ambiente de misión es opcional y se inicia únicamente al pulsar el botón. Algunos navegadores bloquean el audio automático hasta que existe una interacción del usuario.
+
+## Simulación
+La sección de simulación contiene una ilustración vectorial del cohete APOLO5 y una secuencia animada demostrativa. La altitud mostrada es parte de la animación visual, no un dato de vuelo real.

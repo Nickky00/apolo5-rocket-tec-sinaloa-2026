@@ -15,6 +15,6 @@ Landing page estática lista para GitHub Pages.
 - Diseño oscuro, adaptable a móviles y escritorio.
 - Recorrido narrativo: Troposfera, Estratosfera, Termosfera y Espacio exterior.
 - Cuenta regresiva hasta el 2 de diciembre de 2026 a las 07:00 (UTC−7, Culiacán).
-- Ambiente sonoro sintetizado opcional, activado por el usuario.
+- Ambiente sonoro de misión sintetizado con Web Audio API, con activación y apagado mediante botón.
 
 La cuenta regresiva utiliza la hora objetivo con desplazamiento fijo `UTC−07:00`; no requiere servicios externos. Las tipografías de Google Fonts requieren conexión a internet, con tipografías de respaldo incluidas.

@@ -13,8 +13,78 @@ const units={days:document.getElementById('days'),hours:document.getElementById(
 const status=document.getElementById('countdownStatus');
 function tick(){let diff=launchAt-Date.now();if(diff<=0){Object.values(units).forEach(el=>el.textContent='00');status.textContent=diff<0?'LANZAMIENTO PROGRAMADO · HORA OBJETIVO SUPERADA':'¡ES MOMENTO DEL LANZAMIENTO!';return;}const d=Math.floor(diff/86400000);diff%=86400000;const h=Math.floor(diff/3600000);diff%=3600000;const m=Math.floor(diff/60000);const s=Math.floor(diff%60000/1000);units.days.textContent=String(d).padStart(2,'0');units.hours.textContent=String(h).padStart(2,'0');units.minutes.textContent=String(m).padStart(2,'0');units.seconds.textContent=String(s).padStart(2,'0');}
 tick();setInterval(tick,1000);
-// Optional synthesized low-frequency mission ambience; starts only after a user gesture.
-const soundButton=document.getElementById('soundToggle');let audioContext=null,oscillators=[],gainNode=null,soundOn=false;
-function startAmbience(){const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;audioContext=new AudioCtx();gainNode=audioContext.createGain();gainNode.gain.value=.0001;gainNode.connect(audioContext.destination);const a=audioContext.createOscillator(),b=audioContext.createOscillator();a.type='sawtooth';b.type='sine';a.frequency.value=46;b.frequency.value=54;const low=audioContext.createBiquadFilter();low.type='lowpass';low.frequency.value=115;a.connect(low);b.connect(low);low.connect(gainNode);a.start();b.start();gainNode.gain.setTargetAtTime(.035,audioContext.currentTime,.8);oscillators=[a,b];}
-function stopAmbience(){if(!audioContext)return;gainNode.gain.setTargetAtTime(.0001,audioContext.currentTime,.25);const ctx=audioContext;setTimeout(()=>{oscillators.forEach(o=>{try{o.stop()}catch(e){}});ctx.close();audioContext=null;oscillators=[];},1100);}
-soundButton.addEventListener('click',()=>{soundOn=!soundOn;if(soundOn){startAmbience();soundButton.setAttribute('aria-pressed','true');soundButton.innerHTML='<span class="sound-icon">♫</span> DESACTIVAR AMBIENTE DE MISIÓN';}else{stopAmbience();soundButton.setAttribute('aria-pressed','false');soundButton.innerHTML='<span class="sound-icon">♫</span> ACTIVAR AMBIENTE DE MISIÓN';}});
+// Ambiente de misión sintetizado con Web Audio API. Requiere un clic del usuario.
+const soundButton=document.getElementById('soundToggle');
+const soundNote=document.querySelector('.sound-note');
+let audioContext=null, masterGain=null, soundNodes=[], soundOn=false, stopping=false;
+async function startAmbience(){
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx) throw new Error('Este navegador no admite Web Audio.');
+  audioContext=new AudioCtx();
+  // Llamar resume dentro del gesto del usuario evita que el contexto quede suspendido.
+  const resumePromise=audioContext.resume();
+  masterGain=audioContext.createGain();
+  masterGain.gain.setValueAtTime(0.0001,audioContext.currentTime);
+  masterGain.connect(audioContext.destination);
+
+  // Ruido filtrado para crear un ambiente continuo, en lugar de dos tonos casi inaudibles.
+  const length=audioContext.sampleRate*3;
+  const noiseBuffer=audioContext.createBuffer(1,length,audioContext.sampleRate);
+  const channel=noiseBuffer.getChannelData(0);
+  for(let i=0;i<length;i++) channel[i]=(Math.random()*2-1)*0.7;
+  const noise=audioContext.createBufferSource();
+  noise.buffer=noiseBuffer; noise.loop=true;
+  const noiseFilter=audioContext.createBiquadFilter();
+  noiseFilter.type='lowpass'; noiseFilter.frequency.value=420; noiseFilter.Q.value=0.7;
+  const noiseGain=audioContext.createGain(); noiseGain.gain.value=0.24;
+  noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(masterGain); noise.start();
+
+  const rumble=audioContext.createOscillator(); rumble.type='sine'; rumble.frequency.value=58;
+  const rumbleGain=audioContext.createGain(); rumbleGain.gain.value=0.16;
+  rumble.connect(rumbleGain); rumbleGain.connect(masterGain); rumble.start();
+
+  const hum=audioContext.createOscillator(); hum.type='triangle'; hum.frequency.value=92;
+  const humGain=audioContext.createGain(); humGain.gain.value=0.045;
+  hum.connect(humGain); humGain.connect(masterGain); hum.start();
+  soundNodes=[noise,rumble,hum];
+  await resumePromise;
+  if(audioContext.state!=='running') throw new Error('El navegador mantuvo el audio pausado.');
+  masterGain.gain.setTargetAtTime(0.42,audioContext.currentTime,0.45);
+}
+async function stopAmbience(){
+  if(!audioContext||stopping)return;
+  stopping=true;
+  const ctx=audioContext, gain=masterGain, nodes=[...soundNodes];
+  gain.gain.setTargetAtTime(0.0001,ctx.currentTime,0.18);
+  await new Promise(resolve=>setTimeout(resolve,850));
+  nodes.forEach(node=>{try{node.stop();}catch(e){}});
+  try{await ctx.close();}catch(e){}
+  if(audioContext===ctx){audioContext=null;masterGain=null;soundNodes=[];}
+  stopping=false;
+}
+soundButton.addEventListener('click',async()=>{
+  if(soundOn){
+    soundOn=false;
+    soundButton.setAttribute('aria-pressed','false');
+    soundButton.innerHTML='<span class="sound-icon">♫</span> ACTIVAR AMBIENTE DE MISIÓN';
+    if(soundNote)soundNote.textContent='Audio ambiental apagado.';
+    await stopAmbience();
+    return;
+  }
+  soundButton.disabled=true;
+  if(soundNote)soundNote.textContent='Iniciando ambiente de misión…';
+  try{
+    await startAmbience();
+    soundOn=true;
+    soundButton.setAttribute('aria-pressed','true');
+    soundButton.innerHTML='<span class="sound-icon">♫</span> DESACTIVAR AMBIENTE DE MISIÓN';
+    if(soundNote)soundNote.textContent='Ambiente de misión activo · Ajusta el volumen de tu dispositivo.';
+  }catch(error){
+    console.error('No fue posible iniciar el ambiente de misión:',error);
+    if(audioContext){try{await audioContext.close();}catch(e){}}
+    audioContext=null;masterGain=null;soundNodes=[];soundOn=false;
+    if(soundNote)soundNote.textContent='No se pudo iniciar el audio. Prueba en otro navegador o revisa sus permisos de sonido.';
+    soundButton.setAttribute('aria-pressed','false');
+    soundButton.innerHTML='<span class="sound-icon">♫</span> INTENTAR DE NUEVO';
+  }finally{soundButton.disabled=false;}
+});
